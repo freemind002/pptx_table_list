@@ -73,14 +73,14 @@ for z in range(blank_page):
     # print(header)
     for i, h in enumerate(header):
         cell = table.cell(0, i)
-        cell.vertical_anchor = MSO_ANCHOR.MIDDLE  
+        cell.vertical_anchor = MSO_ANCHOR.MIDDLE # 垂直置中 
         tf = cell.text_frame
         para = tf.paragraphs[0]
         para.text = h
         para.font.size = Pt(16)
         para.font.name = '微軟正黑體'
         para.font.bold = True
-        para.alignment = PP_ALIGN.CENTER  # 居中
+        para.alignment = PP_ALIGN.CENTER  # 水平置中
         
     # 按行寫入數據
     r, c = df.shape
