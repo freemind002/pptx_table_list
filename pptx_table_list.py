@@ -48,7 +48,6 @@ def df_to_row(table, df, z, i, j):
 
 
 for z in range(blank_page):
-    # insert_blank_slide(6, Cm(1.76), Cm(0.49), Cm(21.89), Cm(1.28), "事件處理統計列表", '微軟正黑體', Pt(39))
     blank_slide_layout = prs.slide_layouts[6]  # 用內置模板(0-10)添加一個全空的ppt頁面
     slide = prs.slides.add_slide(blank_slide_layout)
     left, top, width, height = Cm(1.76), Cm(0.49), Cm(21.89), Cm(1.28)
