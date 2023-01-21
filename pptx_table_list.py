@@ -16,7 +16,7 @@ n = int(input("請輸入？資料為一頁："))
 case_name = ['事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX', '事件名稱XXX']
 # ================================更改的參數=====================================
 # 事件編號，從case_name的索引取得
-case_number = [i+1 for i, j in enumerate(case_name)]
+case_number = [i+1 for i in range(len(case_name))]
 # 處理結果
 case_result = "處理完成"
 df = pd.DataFrame(data={'事件編號': case_number, '事件名稱': case_name, '處理結果': case_result})
@@ -36,14 +36,15 @@ prs.slide_height, prs.slide_width = Cm(19.05), Cm(25.4)  # 設定ppt的高度 # 
 blank_page = len(case_name) // n if len(case_name) % n == 0 else len(case_name) // n + 1
 
 
-def df_to_row(table, df, z, i, j):
-    cell = table.cell(i+1-n*z, j)
+def df_to_table(table, df, z, i, j=None, h=None, header=True):
+    cell = table.cell(0, i) if header is True else table.cell(i+1-n*z, j)
     cell.vertical_anchor = MSO_ANCHOR.MIDDLE
     tf = cell.text_frame
     para = tf.paragraphs[0]
-    para.text = str(df.iloc[i, j])
+    para.text = h if header is True else str(df.iloc[i, j])
     para.font.size = Pt(16)
     para.font.name = '微軟正黑體'
+    para.font.bold = True if header is True else False
     para.alignment = PP_ALIGN.CENTER  # 水平置中對齊
 
 
@@ -67,45 +68,32 @@ for z in range(blank_page):
     table = slide.shapes.add_table(rows, cols, left, top, width, height).table
     # 調整行高、列寬
     for i in range(rows):
-        table.rows[i].height = Cm(1.1) if i == 0 else Cm(1.26)
-    table.columns[0].width = Cm(2.8)
-    table.columns[1].width = Cm(13.6)
-    table.columns[2].width = Cm(7.86)
+        table.rows[i].height = Cm(12.6/n*(1.1/1.26)) if i == 0 else Cm(12.6/n)
+    table.columns[0].width, table.columns[1].width, table.columns[2].width = Cm(2.8), Cm(13.6), Cm(7.86)
 
     # 寫入表頭
-    header = df.columns
-    # print(header)
-    for i, h in enumerate(header):
-        cell = table.cell(0, i)
-        cell.vertical_anchor = MSO_ANCHOR.MIDDLE  # 垂直置中
-        tf = cell.text_frame
-        para = tf.paragraphs[0]
-        para.text = h
-        para.font.size = Pt(16)
-        para.font.name = '微軟正黑體'
-        para.font.bold = True
-        para.alignment = PP_ALIGN.CENTER  # 水平置中
-
+    for i, h in enumerate(df.columns):
+        df_to_row(table=table, df=df, z=z, i=i, h=h, header=True)
     # 按行寫入數據
     r, c = df.shape
     # print(df.shape)
     # 如果資料為n的倍數筆資料，處理方式
     if len(case_name) % n == 0:
-        for i in range(0+n*z, n+n*z):
+        for i in range(n*z, n+n*z):
             for j in range(c):
-                df_to_row(table, df, z, i, j)
+                df_to_row(table=table, df=df, z=z, i=i, j=j, header=False)
     # 如果資料不為10的倍數筆資料，處理方式
     else:
         # 最後一頁時，資料的處理方式
         if z+1 == blank_page:
-            for i in range(0+n*z, len(case_name)):
+            for i in range(n*z, len(case_name)):
                 for j in range(c):
-                    df_to_row(table, df, z, i, j)
+                    df_to_row(table=table, df=df, z=z, i=i, j=j, header=False)
         else:
             # 前面的頁數時，與一般情況相同，因此處理方式相同
-            for i in range(0+n*z, n+n*z):
+            for i in range(n*z, n+n*z):
                 for j in range(c):
-                    df_to_row(table, df, z, i, j)
+                    df_to_row(table=table, df=df, z=z, i=i, j=j, header=False)
 
 prs.save('pptx_table_list.pptx')
 print('PPTX製作完成')
