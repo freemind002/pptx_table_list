@@ -73,7 +73,7 @@ for z in range(blank_page):
 
     # 寫入表頭
     for i, h in enumerate(df.columns):
-        df_to_row(table=table, df=df, z=z, i=i, h=h, header=True)
+        df_to_table(table=table, df=df, z=z, i=i, h=h, header=True)
     # 按行寫入數據
     r, c = df.shape
     # print(df.shape)
@@ -81,19 +81,19 @@ for z in range(blank_page):
     if len(case_name) % n == 0:
         for i in range(n*z, n+n*z):
             for j in range(c):
-                df_to_row(table=table, df=df, z=z, i=i, j=j, header=False)
+                df_to_table(table=table, df=df, z=z, i=i, j=j, header=False)
     # 如果資料不為10的倍數筆資料，處理方式
     else:
         # 最後一頁時，資料的處理方式
         if z+1 == blank_page:
             for i in range(n*z, len(case_name)):
                 for j in range(c):
-                    df_to_row(table=table, df=df, z=z, i=i, j=j, header=False)
+                    df_to_table(table=table, df=df, z=z, i=i, j=j, header=False)
         else:
             # 前面的頁數時，與一般情況相同，因此處理方式相同
             for i in range(n*z, n+n*z):
                 for j in range(c):
-                    df_to_row(table=table, df=df, z=z, i=i, j=j, header=False)
+                    df_to_table(table=table, df=df, z=z, i=i, j=j, header=False)
 
 prs.save('pptx_table_list.pptx')
 print('PPTX製作完成')
