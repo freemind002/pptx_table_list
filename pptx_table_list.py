@@ -27,8 +27,6 @@ class PTTXReport(object):
         self,
         table,
         data_list: List[Dict[Text, Any]],
-        column_num: int,
-        row_num: int,
     ):
         """將資料寫入table中
 
@@ -38,24 +36,17 @@ class PTTXReport(object):
             column_num (int): table有多少的column
             row_num (int): table有多少的row
         """
-        for row_index in range(row_num):
-            for column_index in range(column_num):
+        data_list.insert(0, {title: title for title in self.title_list})
+        for row_index, data in enumerate(data_list):
+            for column_index, (title, value) in enumerate(data.items()):
                 cell = table.cell(row_index, column_index)
-                cell.vertical_anchor = MSO_ANCHOR.MIDDLE
                 tf = cell.text_frame
                 para = tf.paragraphs[0]
-                para.text = (
-                    self.title_list[column_index]
-                    if row_index == 0
-                    else data_list[row_index - 1][self.title_list[column_index]]
-                )
+                para.text = value
                 para.font.size = Pt(16)
                 para.font.name = "微軟正黑體"
                 para.font.bold = True if row_index == 0 else False
                 para.alignment = PP_ALIGN.CENTER  # 水平置中對齊
-            # 如果剛好跑到data_list的最後一筆資料，則break
-            if row_index + 1 == len(data_list):
-                break
 
     def run_all(self):
         n = int(input("請輸入？筆資料為一頁："))
@@ -109,13 +100,9 @@ class PTTXReport(object):
             self.data_to_table(
                 table,
                 case_list[0 + page * n : (page + 1) * n],
-                column_num=self.title_num,
-                row_num=rows,
             ) if (page + 1 < blank_page) else self.data_to_table(
                 table,
                 case_list[0 + page * n :],
-                column_num=self.title_num,
-                row_num=rows,
             )
         self.prs.save(f"report_{self.update_date}.pptx")
 
