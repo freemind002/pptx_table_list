@@ -33,8 +33,6 @@ class PTTXReport(object):
         Args:
             table (_type_): 每一頁要操作的table
             data_list (Union[List[Text], List[Dict[Text, Any]]]): 有可能是header的資料或是事件的相關資料
-            column_num (int): table有多少的column
-            row_num (int): table有多少的row
         """
         data_list.insert(0, {title: title for title in self.title_list})
         for row_index, data in enumerate(data_list):
