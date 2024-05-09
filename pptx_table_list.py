@@ -1,8 +1,9 @@
 # -*- coding:utf-8 -*-
 # 將事件編號、事件名稱、處理情形放入表格當中
 import math
-from typing import Any, Dict, List, Text, Union
+from typing import Any, Dict, List, Text
 
+import arrow
 import my_case_name_list
 import polars as pl
 from pptx import Presentation
@@ -19,43 +20,42 @@ class PTTXReport(object):
         self.prs = Presentation()
         self.prs.slide_height, self.prs.slide_width = Cm(19.05), Cm(25.4)
         self.title_list = ["事件編號", "事件名稱", "處理結果"]
+        self.title_num = len(self.title_list)
+        self.update_date = arrow.now().format("YYYYMMDD")
 
     def data_to_table(
         self,
         table,
-        data_list: Union[List[Text], List[Dict[Text, Any]]],
-        header: bool,
+        data_list: List[Dict[Text, Any]],
+        column_num: int,
+        row_num: int,
     ):
         """將資料寫入table中
 
         Args:
             table (_type_): 每一頁要操作的table
             data_list (Union[List[Text], List[Dict[Text, Any]]]): 有可能是header的資料或是事件的相關資料
-            header (bool): 要操作的是header還是其他的內容
+            column_num (int): table有多少的column
+            row_num (int): table有多少的row
         """
-        if header is True:
-            for index, data in enumerate(data_list):
-                cell = table.cell(0, index)
+        for row_index in range(row_num):
+            for column_index in range(column_num):
+                cell = table.cell(row_index, column_index)
                 cell.vertical_anchor = MSO_ANCHOR.MIDDLE
                 tf = cell.text_frame
                 para = tf.paragraphs[0]
-                para.text = data
+                para.text = (
+                    self.title_list[column_index]
+                    if row_index == 0
+                    else data_list[row_index - 1][self.title_list[column_index]]
+                )
                 para.font.size = Pt(16)
                 para.font.name = "微軟正黑體"
-                para.font.bold = True
+                para.font.bold = True if row_index == 0 else False
                 para.alignment = PP_ALIGN.CENTER  # 水平置中對齊
-        else:
-            for data_index, data in enumerate(data_list, 1):
-                for value_index, (title, value) in enumerate(data.items()):
-                    cell = table.cell(data_index, value_index)
-                    cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-                    tf = cell.text_frame
-                    para = tf.paragraphs[0]
-                    para.text = value
-                    para.font.size = Pt(16)
-                    para.font.name = "微軟正黑體"
-                    para.font.bold = False
-                    para.alignment = PP_ALIGN.CENTER  # 水平置中對齊
+            # 如果剛好跑到data_list的最後一筆資料，則break
+            if row_index + 1 == len(data_list):
+                break
 
     def run_all(self):
         n = int(input("請輸入？筆資料為一頁："))
@@ -71,12 +71,8 @@ class PTTXReport(object):
             .collect()
             .to_dicts()
         )
-        # print(case_list)
         # 總計需插入？頁，使用無條件進位處理
-        case_num = len(case_list)
-        print(case_num)
-        blank_page = int(math.ceil(case_num / n))
-        print(blank_page)
+        blank_page = int(math.ceil(len(case_list) / n))
         for page in range(blank_page):
             # 用內置模板(0-10)添加一個全空的ppt頁面
             blank_slide_layout = self.prs.slide_layouts[6]
@@ -94,36 +90,34 @@ class PTTXReport(object):
             p.alignment = PP_ALIGN.CENTER
 
             # 插入表格
-            rows, cols, left, top, width, height = (
-                n + 1,
-                3,
-                Cm(0.5),
-                Cm(4.5),
-                Cm(1),
-                Cm(1.23),
-            )
+            rows = n + 1
+            cols = self.title_num
+            left = Cm(0.5)
+            top = Cm(4.5)
+            width = Cm(1)
+            height = Cm(1.23)
             table = slide.shapes.add_table(rows, cols, left, top, width, height).table
             # 調整行高、列寬
             for index in range(rows):
                 table.rows[index].height = (
                     Cm(12.6 / n * (1.1 / 1.26)) if index == 0 else Cm(12.6 / n)
                 )
-            table.columns[0].width, table.columns[1].width, table.columns[2].width = (
-                Cm(2.8),
-                Cm(13.6),
-                Cm(7.86),
+            table.columns[0].width = Cm(2.8)
+            table.columns[1].width = Cm(13.6)
+            table.columns[2].width = Cm(7.86)
+            # 最後一頁的case_list的範圍稍微不同
+            self.data_to_table(
+                table,
+                case_list[0 + page * n : (page + 1) * n],
+                column_num=self.title_num,
+                row_num=rows,
+            ) if (page + 1 < blank_page) else self.data_to_table(
+                table,
+                case_list[0 + page * n :],
+                column_num=self.title_num,
+                row_num=rows,
             )
-            # 寫入表頭
-            self.data_to_table(table, self.title_list, header=True)
-            # 如果資料為n的倍數筆資料，處理方式
-            if page + 1 < blank_page:
-                self.data_to_table(
-                    table, case_list[0 + page * n : (page + 1) * n], header=False
-                )
-            else:
-                self.data_to_table(table, case_list[0 + page * n :], header=False)
-        self.prs.save("test.pptx")
-        print("PPTX製作完成")
+        self.prs.save(f"report_{self.update_date}.pptx")
 
     def main(self):
         current_except = None
@@ -132,6 +126,8 @@ class PTTXReport(object):
         except Exception as e:
             print(e)
             current_except = e
+        else:
+            print("PPTX製作完成")
         finally:
             if current_except:
                 raise current_except
