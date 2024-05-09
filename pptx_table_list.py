@@ -26,6 +26,13 @@ class PTTXReport(object):
         data_list: Union[List[Text], List[Dict[Text, Any]]],
         header: bool,
     ):
+        """將資料寫入table中
+
+        Args:
+            table (_type_): 每一頁要操作的table
+            data_list (Union[List[Text], List[Dict[Text, Any]]]): 有可能是header的資料或是事件的相關資料
+            header (bool): 要操作的是header還是其他的內容
+        """
         if header is True:
             for index, data in enumerate(data_list):
                 cell = table.cell(0, index)
