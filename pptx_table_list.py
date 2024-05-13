@@ -32,8 +32,9 @@ class PTTXReport(object):
 
         Args:
             table (_type_): 每一頁要操作的table
-            data_list (Union[List[Text], List[Dict[Text, Any]]]): 有可能是header的資料或是事件的相關資料
+            data_list (List[Dict[Text, Any]]]): 事件的相關資料
         """
+        # 在data_list的第0個位置插入標題的文字
         data_list.insert(0, {title: title for title in self.title_list})
         for row_index, data in enumerate(data_list):
             for column_index, (title, value) in enumerate(data.items()):
@@ -49,11 +50,7 @@ class PTTXReport(object):
     def run_all(self):
         n = int(input("請輸入？筆資料為一頁："))
         case_list = (
-            pl.LazyFrame(
-                {
-                    self.title_list[1]: my_case_name_list.case_name_list,
-                }
-            )
+            pl.LazyFrame({self.title_list[1]: my_case_name_list.case_name_list})
             .with_row_index(self.title_list[0], offset=1)
             .with_columns(pl.lit("處理完成").alias(self.title_list[2]))
             .cast(pl.String)
