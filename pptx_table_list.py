@@ -49,16 +49,14 @@ class PTTXReport(object):
 
     def run_all(self):
         n = int(input("請輸入？筆資料為一頁："))
-        case_list = (
+        case_lf = (
             pl.LazyFrame({self.title_list[1]: my_case_name_list.case_name_list})
             .with_row_index(self.title_list[0], offset=1)
             .with_columns(pl.lit("處理完成").alias(self.title_list[2]))
             .cast(pl.String)
-            .collect()
-            .to_dicts()
         )
         # 總計需插入？頁，使用無條件進位處理
-        blank_page = int(math.ceil(len(case_list) / n))
+        blank_page = int(math.ceil(case_lf.collect().height / n))
         for page in range(blank_page):
             # 用內置模板(0-10)添加一個全空的ppt頁面
             blank_slide_layout = self.prs.slide_layouts[6]
@@ -94,10 +92,7 @@ class PTTXReport(object):
             # 最後一頁的case_list的範圍稍微不同
             self.data_to_table(
                 table,
-                case_list[0 + page * n : (page + 1) * n],
-            ) if (page + 1 < blank_page) else self.data_to_table(
-                table,
-                case_list[0 + page * n :],
+                case_lf.slice(page * n, n).collect().to_dicts(),
             )
         self.prs.save(f"report_{self.update_date}.pptx")
 
