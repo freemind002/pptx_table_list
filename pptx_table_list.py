@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
-# 將事件編號、事件名稱、處理情形放入表格當中
+"""將事件編號、事件名稱、處理情形放入表格當中"""
+
 import math
 from typing import Any, Dict, List, Text
 
@@ -8,6 +9,7 @@ import my_case_name_list
 import polars as pl
 from pptx import Presentation
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
+from pptx.table import Table
 from pptx.util import Cm, Pt
 
 # from pptx.dml.color import RGBColor
@@ -25,13 +27,13 @@ class PTTXReport(object):
 
     def data_to_table(
         self,
-        table,
+        table: Table,
         data_list: List[Dict[Text, Any]],
     ):
         """將資料寫入table中
 
         Args:
-            table (_type_): 每一頁要操作的table
+            table (Table): 每一頁要操作的table
             data_list (List[Dict[Text, Any]]]): 事件的相關資料
         """
         # 在data_list的第0個位置插入標題的文字
