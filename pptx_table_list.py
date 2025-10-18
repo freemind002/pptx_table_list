@@ -34,10 +34,8 @@ class PTTXReport(object):
 
         Args:
             table (Table): 每一頁要操作的table
-            data_list (List[Dict[Text, Any]]]): 事件的相關資料
+            data_list (List[Dict[Text, Any]]]): 事件的相關資料，第0行為標題
         """
-        # 在data_list的第0個位置插入標題的文字
-        data_list.insert(0, {title: title for title in self.title_list})
         for row_index, data in enumerate(data_list):
             for column_index, (title, value) in enumerate(data.items()):
                 cell = table.cell(row_index, column_index)
@@ -52,11 +50,14 @@ class PTTXReport(object):
     def run_all(self):
         n = int(input("請輸入？筆資料為一頁："))
         case_lf = (
-            pl.LazyFrame({self.title_list[1]: my_case_name_list.case_name_list})
+            pl.LazyFrame(
+                {self.title_list[1]: my_case_name_list.case_name_list}, orient="row"
+            )
             .with_row_index(self.title_list[0], offset=1)
             .with_columns(pl.lit("處理完成").alias(self.title_list[2]))
             .cast(pl.String)
         )
+        title_lf = pl.LazyFrame([self.title_list], schema=self.title_list, orient="row")
         # 總計需插入？頁，使用無條件進位處理
         blank_page = int(math.ceil(case_lf.collect().height / n))
         for page in range(blank_page):
@@ -76,12 +77,8 @@ class PTTXReport(object):
             p.alignment = PP_ALIGN.CENTER
 
             # 插入表格
-            rows = n + 1
-            cols = self.title_num
-            left = Cm(0.5)
-            top = Cm(4.5)
-            width = Cm(1)
-            height = Cm(1.23)
+            rows, cols = n + 1, self.title_num
+            left, top, width, height = Cm(0.5), Cm(4.5), Cm(1), Cm(1.23)
             table = slide.shapes.add_table(rows, cols, left, top, width, height).table
             # 調整行高、列寬
             for index in range(rows):
@@ -91,11 +88,11 @@ class PTTXReport(object):
             table.columns[0].width = Cm(2.8)
             table.columns[1].width = Cm(13.6)
             table.columns[2].width = Cm(7.86)
-            # 最後一頁的case_list的範圍稍微不同
-            self.data_to_table(
-                table,
-                case_lf.slice(page * n, n).collect().to_dicts(),
+            # 使用concat，組成第0行為標題及後面為事件相關的lf
+            data_list = (
+                pl.concat([title_lf, case_lf.slice(page * n, n)]).collect().to_dicts()
             )
+            self.data_to_table(table, data_list)
         self.prs.save(f"report_{self.update_date}.pptx")
 
     def main(self):
