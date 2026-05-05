@@ -25,11 +25,8 @@ class PTTXReport(object):
         self.title_num = len(self.title_list)
         self.update_date = arrow.now().format("YYYYMMDD")
 
-    def data_to_table(
-        self,
-        table: Table,
-        data_list: List[Dict[Text, Any]],
-    ):
+    @staticmethod
+    def data_to_table(table: Table, data_list: List[Dict[Text, Any]]):
         """將資料寫入table中
 
         Args:
@@ -44,7 +41,7 @@ class PTTXReport(object):
                 para.text = value
                 para.font.size = Pt(16)
                 para.font.name = "微軟正黑體"
-                para.font.bold = True if row_index == 0 else False
+                para.font.bold = row_index == 0
                 para.alignment = PP_ALIGN.CENTER  # 水平置中對齊
 
     def run_all(self):
